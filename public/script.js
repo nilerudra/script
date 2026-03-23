@@ -79,45 +79,37 @@
 
   // will fetch cart data
   async function getCart() {
-    console.log("Using mock cart");
-
-    fetch(window.Shopify.routes.root + "cart.js", {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        console.log(response);
-        return response.json();
-      })
-      .then((cart) => {
-        console.log("Cart object:", cart);
-        console.log("Cart items:", cart.items);
-      })
-      .catch((error) => {
-        console.error("Error fetching cart:", error);
+    try {
+      const res = await fetch(window.Shopify.routes.root + "cart.js", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+        credentials: "same-origin",
       });
 
-    return {
-      items: [
-        {
-          variant_id: 12345,
-          name: "TShirt",
-          Image: "https://picsum.photos/536/354",
-          quantity: 2,
-          price: 500,
-        },
-      ],
-      total_price: 1000,
-    };
+      if (!res.ok) {
+        throw new Error("Failed to fetch cart");
+      }
 
-    // const res = await fetch("/cart.js");
+      const cart = await res.json();
 
-    // return await res.json();
+      console.log({ cart });
+
+      return {
+        items: cart.items.map((item) => ({
+          variant_id: item.variant_id,
+          name: item.product_title,
+          image: item.image,
+          quantity: item.quantity,
+          price: item.price, // in cents
+        })),
+        total_price: cart.total_price,
+      };
+    } catch (err) {
+      console.error("Cart error:", err);
+      return null;
+    }
   }
 
   // sends cart data to backend server, it will return the Checkout URL
