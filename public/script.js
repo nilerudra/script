@@ -104,7 +104,7 @@
           quantity: item.quantity,
           price: item.price / 100,
         })),
-        total_price: cart.total_price,
+        total_price: cart.total_price / 100,
       };
     } catch (err) {
       console.error("Cart error:", err);
