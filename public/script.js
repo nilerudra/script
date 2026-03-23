@@ -102,7 +102,7 @@
           name: item.product_title,
           image: item.image,
           quantity: item.quantity,
-          price: item.price, // in cents
+          price: item.price / 100,
         })),
         total_price: cart.total_price,
       };
