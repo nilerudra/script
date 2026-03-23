@@ -81,13 +81,33 @@
   async function getCart() {
     console.log("Using mock cart");
 
+    fetch(window.Shopify.routes.root + "cart.js", {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        console.log(response);
+        return response.json();
+      })
+      .then((cart) => {
+        console.log("Cart object:", cart);
+        console.log("Cart items:", cart.items);
+      })
+      .catch((error) => {
+        console.error("Error fetching cart:", error);
+      });
+
     return {
       items: [
         {
           variant_id: 12345,
           name: "TShirt",
-          Image:
-            "https://crowncricketer.com/wp-content/uploads/2025/09/ADIDAS-KC3746.jpg",
+          Image: "https://picsum.photos/536/354",
           quantity: 2,
           price: 500,
         },
