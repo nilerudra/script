@@ -132,7 +132,7 @@
     await new Promise((resolve) => setTimeout(resolve, 800));
 
     return {
-      checkoutUrl: "http://127.0.0.1:5500//checkout.html?session=mock123",
+      checkoutUrl: "http://127.0.0.1:5500/checkout.html?session=mock123",
     };
   }
 
