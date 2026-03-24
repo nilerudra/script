@@ -38,8 +38,10 @@ app.post("/checkout/session", (req, res) => {
 
   const sessionId = Date.now(); // simple session
 
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+
   res.json({
-    url: `http://localhost:3000/checkout.html?session=${sessionId}`,
+    url: `${baseUrl}/checkout.html?session=${sessionId}`,
   });
 });
 
