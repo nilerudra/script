@@ -1,6 +1,11 @@
 (function () {
   console.log("Universal Checkout SDK loaded");
 
+  const script = document.currentScript;
+  const domain = new URL(script.src).origin;
+
+  console.log("domain: ", domain);
+
   init();
 
   function init() {
@@ -89,12 +94,12 @@
       });
 
       if (!res.ok) {
-        throw new Error("Failed to fetch cart");
+        throw new Error("Cart fetch failed");
       }
 
       const cart = await res.json();
 
-      console.log({ cart });
+      console.log("Real cart:", cart);
 
       return {
         items: cart.items.map((item) => ({
@@ -107,33 +112,61 @@
         total_price: cart.total_price / 100,
       };
     } catch (err) {
-      console.error("Cart error:", err);
-      return null;
+      console.warn("Using mock cart (local/dev mode)");
+
+      // 🔥 Fallback mock data
+      return {
+        items: [
+          {
+            variant_id: 12345,
+            name: "Test Product",
+            image: "https://picsum.photos/200",
+            quantity: 2,
+            price: 500,
+          },
+        ],
+        total_price: 1000,
+      };
     }
   }
 
   // sends cart data to backend server, it will return the Checkout URL
   async function createCheckoutSession(cart) {
-    // const res = await fetch("https://api.synegrow.com/checkout/session", {
-    //   method: "POST",
+    console.log(cart);
+
+    const res = await fetch("http://localhost:3000/checkout/session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        cart,
+        shop: window.location.hostname,
+      }),
+    });
+
+    const data = await res.json();
+
+    return await data;
+
+    // console.log("Mock Checkout Session: ", cart);
+
+    // await new Promise((resolve) => setTimeout(resolve, 800));
+
+    // console.log({ domain });
+
+    // const res = await fetch(`${domain}/checkout.html`, {
+    //   method: "GET",
     //   headers: {
-    //     "Content-Type": "application/json",
+    //     Accept: "application/json",
     //   },
-    //   body: JSON.stringify({
-    //     shop: window.location.hostname,
-    //     cart: cart,
-    //   }),
+    //   credentials: "same-origin",
     // });
+    // console.log(res);
 
-    // return await res.json();
-
-    console.log("Mock Checkout Session: ", cart);
-
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    return {
-      checkoutUrl: "http://127.0.0.1:5500/checkout.html?session=mock123",
-    };
+    // return {
+    //   checkoutUrl: "http://127.0.0.1:5500/checkout.html?session=mock123",
+    // };
   }
 
   // main checkout flow
@@ -147,22 +180,12 @@
 
       const encodedCart = encodeURIComponent(JSON.stringify(cart));
 
-      const checkoutUrl = `${session.checkoutUrl}&cart=` + encodedCart;
+      const checkoutUrl = `${session.url}&cart=` + encodedCart;
 
-      // redirect to hosted backend
-      // redirectToCheckout(session.checkoutUrl);
-      // redirectToCheckout(checkoutUrl);
       openCheckoutPopup(checkoutUrl);
     } catch (err) {
       console.error("Checkout error:", err); // handles error
     }
-  }
-
-  // redirect user to hosted checkout page
-  function redirectToCheckout(url) {
-    console.log("Redirecting to:", url);
-
-    window.location.href = url;
   }
 })();
 
