@@ -19,7 +19,7 @@
     document.addEventListener("click", function (e) {
       // Finds Checkout element
       const target = e.target.closest(
-        'button[name="checkout"], a[href="/checkout"]',
+        'button[name="checkout"], a[href="/checkout"], button[name="Buy it now"]',
       );
 
       // ignore if not checkout
@@ -62,8 +62,10 @@
 
       const isCheckout =
         el.name === "checkout" ||
+        el.name === "buy-it-now" ||
         el.getAttribute("href") === "/checkout" ||
-        text.includes("checkout");
+        text.includes("checkout") ||
+        text.includes("buy it now");
 
       if (!isCheckout) return;
 
