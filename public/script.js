@@ -146,7 +146,7 @@
   async function createCheckoutSession(cart) {
     const payload = {
       cart,
-      shop: window.location.hostname,
+      shop: "fake-shop.myshopify.com",
       timestamp: Date.now(),
     };
 
