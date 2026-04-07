@@ -146,7 +146,7 @@
   async function createCheckoutSession(cart) {
     const payload = {
       cart,
-      shop: "fake-shop.myshopify.com",
+      shop: window.location.hostname,
       timestamp: Date.now(),
     };
 
@@ -159,7 +159,7 @@
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-signature": signature,
+        "x-signature": "fake-signature-123",
       },
       body: raw,
     });
