@@ -15,21 +15,23 @@
   }
 
   // Global click interceptor
-  function interceptClicks() {
-    document.addEventListener("click", function (e) {
-      // Finds Checkout element
+  async function interceptClicks() {
+    document.addEventListener("click", async function (e) {
       const target = e.target.closest(
-        'button[name="checkout"], a[href="/checkout"], button[name="Buy it now"]',
+        'button[name="checkout"], a[href="/checkout"], .shopify-payment-button__button',
       );
 
-      // ignore if not checkout
       if (!target) return;
 
       e.preventDefault();
       e.stopPropagation();
 
-      // starts custom checkout flow
-      startCheckout();
+      try {
+        await startCheckout();
+      } catch (err) {
+        console.error(err);
+        window.location.href = "/checkout";
+      }
     });
   }
 
@@ -62,10 +64,8 @@
 
       const isCheckout =
         el.name === "checkout" ||
-        el.name === "buy-it-now" ||
         el.getAttribute("href") === "/checkout" ||
-        text.includes("checkout") ||
-        text.includes("buy it now");
+        text.includes("checkout");
 
       if (!isCheckout) return;
 
@@ -134,22 +134,27 @@
 
   // sends cart data to backend server, it will return the Checkout URL
   async function createCheckoutSession(cart) {
-    console.log(cart);
+    const payload = {
+      cart,
+      shop: window.location.hostname,
+      timestamp: Date.now(),
+    };
 
-    const res = await fetch("http://localhost:3000/checkout/session", {
+    // 🔥 Create signature (simple hash)
+    const raw = JSON.stringify(payload);
+
+    const signature = await generateHash(raw);
+
+    const res = await fetch(`${domain}/checkout/session`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-signature": signature,
       },
-      body: JSON.stringify({
-        cart,
-        shop: window.location.hostname,
-      }),
+      body: raw,
     });
 
-    const data = await res.json();
-
-    return await data;
+    return await res.json();
 
     // console.log("Mock Checkout Session: ", cart);
 
