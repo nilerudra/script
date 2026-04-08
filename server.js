@@ -20,7 +20,7 @@ app.use(express.static("public"));
 
 function verifySignature(body, signature) {
   const generated = crypto
-    .createHmac("sha256", process.env.SHARED_SECRET)
+    .createHash("sha256")
     .update(JSON.stringify(body))
     .digest("hex");
 
@@ -46,44 +46,54 @@ app.get("/", (req, res) => {
 });
 
 app.post("/checkout/session", async (req, res) => {
-  const signature = req.headers["x-signature"];
-
-  if (!signature || !verifySignature(req.body, signature)) {
-    return res.status(401).json({
-      error: "Invalid signature",
-    });
-  }
-
-  if (!req.body || !req.body.cart) {
-    return res.status(400).json({
-      error: "Cart data missing",
-    });
-  }
-
   try {
+    const signature = req.headers["x-signature"];
+
+    if (!signature || !verifySignature(req.body, signature)) {
+      return res.status(401).json({
+        error: "Invalid signature",
+      });
+    }
+
     const { cart, shop } = req.body;
     const token = process.env.ACCESS_TOKEN;
 
-    console.log(token);
+    // ✅ Basic validation
+    if (!cart) {
+      return res.status(400).json({ error: "Cart missing" });
+    }
 
-    console.log("Verified request from:", shop);
+    if (!shop) {
+      return res.status(400).json({ error: "Shop missing" });
+    }
+
+    if (!token) {
+      return res.status(500).json({ error: "ACCESS_TOKEN missing" });
+    }
+
+    console.log("Shop:", shop);
     console.log("Cart:", cart);
 
+    // 🔥 Call Shopify
     const shopDetails = await getShopDetails(shop, token);
 
     console.log("Shop Name:", shopDetails.name);
 
     const sessionId = Date.now();
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    // Fix for Render proxy (important)
+    const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+    const baseUrl = `${protocol}://${req.get("host")}`;
 
     res.json({
       shopName: shopDetails.name,
       url: `${baseUrl}/checkout.html?session=${sessionId}`,
     });
   } catch (err) {
-    console.error("Error getting shop details:", err);
+    console.error("ERROR:", err.response?.data || err.message || err);
+
     res.status(500).json({
-      error: "Error getting shop details",
+      error: "Internal Server Error",
     });
   }
 });
