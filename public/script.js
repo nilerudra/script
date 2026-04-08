@@ -159,7 +159,7 @@
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-signature": "fake-signature-123",
+        "x-signature": signature,
       },
       body: raw,
     });
