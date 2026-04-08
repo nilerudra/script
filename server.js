@@ -5,6 +5,7 @@ import cors from "cors";
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import axios from "axios";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,12 +19,22 @@ app.use(cors());
 app.use(express.static("public"));
 
 function verifySignature(body, signature) {
-  const expected = crypto
-    .createHash("sha256")
+  const generated = crypto
+    .createHmac("sha256", process.env.SHARED_SECRET)
     .update(JSON.stringify(body))
     .digest("hex");
 
-  return expected === signature;
+  return generated === signature;
+}
+
+async function getShopDetails(shop, accessToken) {
+  const res = await axios.get(`https://${shop}/admin/api/2023-10/shop.json`, {
+    headers: {
+      "X-Shopify-Access-Token": accessToken,
+    },
+  });
+
+  return res.data.shop;
 }
 
 app.get("/script.js", (req, res) => {
@@ -34,7 +45,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.post("/checkout/session", (req, res) => {
+app.post("/checkout/session", async (req, res) => {
   const signature = req.headers["x-signature"];
 
   if (!signature || !verifySignature(req.body, signature)) {
@@ -49,17 +60,29 @@ app.post("/checkout/session", (req, res) => {
     });
   }
 
-  const { cart, shop } = req.body;
+  try {
+    const { cart, shop } = req.body;
 
-  console.log("Verified request from:", shop);
-  console.log("Cart:", cart);
+    console.log("Verified request from:", shop);
+    console.log("Cart:", cart);
 
-  const sessionId = Date.now();
-  const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const shopDetails = await getShopDetails(shop, process.env.ACCESS_TOKEN);
 
-  res.json({
-    url: `${baseUrl}/checkout.html?session=${sessionId}`,
-  });
+    console.log("Shop Name:", shopDetails.name);
+
+    const sessionId = Date.now();
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    res.json({
+      shopName: shopDetails.name,
+      url: `${baseUrl}/checkout.html?session=${sessionId}`,
+    });
+  } catch (err) {
+    console.error("Error getting shop details:", err);
+    res.status(500).json({
+      error: "Error getting shop details",
+    });
+  }
 });
 
 app.listen(3000, () => {
