@@ -164,6 +164,8 @@
       body: raw,
     });
 
+    console.log({ res });
+
     return await res.json();
 
     // console.log("Mock Checkout Session: ", cart);
