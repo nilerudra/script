@@ -62,11 +62,12 @@ app.post("/checkout/session", async (req, res) => {
 
   try {
     const { cart, shop } = req.body;
+    const token = process.env.ACCESS_TOKEN;
 
     console.log("Verified request from:", shop);
     console.log("Cart:", cart);
 
-    const shopDetails = await getShopDetails(shop, process.env.ACCESS_TOKEN);
+    const shopDetails = await getShopDetails(shop, token);
 
     console.log("Shop Name:", shopDetails.name);
 
