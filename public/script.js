@@ -14,6 +14,24 @@
     initialScan();
   }
 
+  function getUserId() {
+    let userId = localStorage.getItem("syne_user_id");
+
+    if (!userId) {
+      userId = "syne_" + Math.random().toString(36).slice(2);
+      localStorage.setItem("syne_user_id", userId);
+    }
+
+    return userId;
+  }
+
+  function getWalletBalance() {
+    // TEMP: replace with real API or data source later
+    const wallet = localStorage.getItem("syne_wallet");
+
+    return wallet ? Number(wallet) : 0;
+  }
+
   // Global click interceptor
   async function interceptClicks() {
     document.addEventListener("click", async function (e) {
@@ -116,7 +134,7 @@
     } catch (err) {
       console.warn("Using mock cart (local/dev mode)");
 
-      // 🔥 Fallback mock data
+      // mock data
       return {
         items: [
           {
@@ -146,11 +164,17 @@
   async function createCheckoutSession(cart) {
     const payload = {
       cart,
+      user: {
+        userId: getUserId(),
+      },
       shop: window.location.hostname,
-      timestamp: Date.now(),
+      context: "checkout",
+      session: {
+        sessionId: localStorage.getItem("syne_session") || null,
+        timestamp: Date.now(),
+      },
     };
 
-    // 🔥 Create signature (simple hash)
     const raw = JSON.stringify(payload);
 
     const signature = await generateHash(raw);
@@ -164,7 +188,7 @@
       body: raw,
     });
 
-    const data = await res.json(); // 🔥 THIS IS THE KEY
+    const data = await res.json();
 
     console.log(data);
 
@@ -193,6 +217,14 @@
   // main checkout flow
   async function startCheckout() {
     try {
+      const walletBalance = getWalletBalance();
+
+      if (walletBalance <= -5000) {
+        console.warn("Wallet too low → fallback to native checkout");
+        window.location.href = "/checkout";
+        return;
+      }
+
       // fetch cart data
       const cart = await getCart();
 

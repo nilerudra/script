@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
+
 import crypto from "crypto";
 import cors from "cors";
 import express from "express";
@@ -28,7 +29,7 @@ function verifySignature(body, signature) {
 }
 
 async function getShopDetails(shop, accessToken) {
-  const res = await axios.get(`https://${shop}/admin/api/2023-10/shop.json`, {
+  const res = await axios.get(`https://${shop}/admin/api/2025-10/shop.json`, {
     headers: {
       "X-Shopify-Access-Token": accessToken,
     },
@@ -58,7 +59,7 @@ app.post("/checkout/session", async (req, res) => {
     const { cart, shop } = req.body;
     const token = process.env.ACCESS_TOKEN;
 
-    // ✅ Basic validation
+    // Validations
     if (!cart) {
       return res.status(400).json({ error: "Cart missing" });
     }
@@ -74,7 +75,7 @@ app.post("/checkout/session", async (req, res) => {
     console.log("Shop:", shop);
     console.log("Cart:", cart);
 
-    // 🔥 Call Shopify
+    // Fetches Shopify store details
     const shopDetails = await getShopDetails(shop, token);
 
     console.log("Shop Name:", shopDetails);
