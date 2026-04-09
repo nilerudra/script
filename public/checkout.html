@@ -110,14 +110,14 @@
         div.className = "item";
 
         div.innerHTML = `
-          <img src="${item.Image}" alt="${item.name}" />
+          <img src="${item.image}" alt="${item.name}" />
           
           <div class="item-details">
             <div class="item-name">${item.name}</div>
             <div class="item-meta">Qty: ${item.quantity}</div>
           </div>
 
-          <div class="item-price">₹${price}</div>
+          <div class="item-price">$${price}</div>
         `;
 
         cartContainer.appendChild(div);
@@ -125,7 +125,7 @@
 
       // Use backend total instead of recalculating
       document.getElementById("total").innerText =
-        "Total: ₹" + cartData.total_price;
+        "Total: $" + cartData.total_price;
     </script>
   </body>
 </html>
