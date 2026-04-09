@@ -77,7 +77,7 @@ app.post("/checkout/session", async (req, res) => {
     // 🔥 Call Shopify
     const shopDetails = await getShopDetails(shop, token);
 
-    console.log("Shop Name:", shopDetails.name);
+    console.log("Shop Name:", shopDetails);
 
     const sessionId = Date.now();
 
@@ -86,7 +86,7 @@ app.post("/checkout/session", async (req, res) => {
     const baseUrl = `${protocol}://${req.get("host")}`;
 
     res.json({
-      shopName: shopDetails.name,
+      shopDetails: shopDetails,
       url: `${baseUrl}/checkout.html?session=${sessionId}`,
     });
   } catch (err) {
