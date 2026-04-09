@@ -164,9 +164,11 @@
       body: raw,
     });
 
-    console.log({ res });
+    const data = await res.json(); // 🔥 THIS IS THE KEY
 
-    return await res.json();
+    console.log(data);
+
+    return await data;
 
     // console.log("Mock Checkout Session: ", cart);
 
