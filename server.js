@@ -44,15 +44,43 @@ function verifyShopifyProxy(req) {
 
   return generated === received;
 }
-
 async function getShopDetails(shop, accessToken) {
-  const res = await axios.get(`https://${shop}/admin/api/2025-10/shop.json`, {
-    headers: {
-      "X-Shopify-Access-Token": accessToken,
-    },
-  });
+  const query = `
+    query {
+      shop {
+        id
+        name
+        email
+        myshopifyDomain
+        currencyCode
+        primaryDomain {
+          url
+        }
+        plan {
+          displayName
+        }
+        ianaTimezone
+        weightUnit
+      }
+    }
+  `;
 
-  return res.data.shop;
+  const res = await axios.post(
+    `https://${shop}/admin/api/2025-10/graphql.json`,
+    { query },
+    {
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  if (res.data.errors) {
+    throw new Error(JSON.stringify(res.data.errors));
+  }
+
+  return res.data.data.shop;
 }
 
 app.get("/script.js", (req, res) => {
