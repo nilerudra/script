@@ -19,13 +19,30 @@ app.use(cors());
 // Serve static files
 app.use(express.static("public"));
 
-function verifySignature(body, signature) {
+// function verifySignature(body, signature) {
+//   const generated = crypto
+//     .createHash("sha256")
+//     .update(JSON.stringify(body))
+//     .digest("hex");
+
+//   return generated === signature;
+// }
+
+function verifyShopifyProxy(req) {
+  const { signature, hmac, ...query } = req.query;
+  const received = signature || hmac;
+
+  const message = Object.keys(query)
+    .sort()
+    .map((key) => `${key}=${query[key]}`)
+    .join("");
+
   const generated = crypto
-    .createHash("sha256")
-    .update(JSON.stringify(body))
+    .createHmac("sha256", process.env.SHOPIFY_API_SECRET)
+    .update(message)
     .digest("hex");
 
-  return generated === signature;
+  return generated === received;
 }
 
 async function getShopDetails(shop, accessToken) {
@@ -46,17 +63,14 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.post("/checkout/session", async (req, res) => {
+app.post("/api/proxy/checkout/session", async (req, res) => {
   try {
-    const signature = req.headers["x-signature"];
-
-    if (!signature || !verifySignature(req.body, signature)) {
-      return res.status(401).json({
-        error: "Invalid signature",
-      });
+    if (!verifyShopifyProxy(req)) {
+      return res.status(401).json({ error: "Invalid proxy request" });
     }
 
-    const { cart, shop } = req.body;
+    const shop = req.query.shop;
+    const { cart } = req.body;
     const token = process.env.ACCESS_TOKEN;
 
     // Validations

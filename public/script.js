@@ -177,13 +177,13 @@
 
     const raw = JSON.stringify(payload);
 
-    const signature = await generateHash(raw);
+    // const signature = await generateHash(raw);
 
-    const res = await fetch(`${domain}/checkout/session`, {
+    const res = await fetch(`/apps/synegrow/checkout/session`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-signature": signature,
+        // "x-signature": signature,
       },
       body: raw,
     });
