@@ -63,7 +63,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.post("/api/proxy/checkout/session", async (req, res) => {
+app.post("/checkout/session", async (req, res) => {
   try {
     if (!verifyShopifyProxy(req)) {
       return res.status(401).json({ error: "Invalid proxy request" });
