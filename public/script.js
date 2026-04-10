@@ -25,6 +25,17 @@
     return userId;
   }
 
+  function getSessionId() {
+    let sessionId = localStorage.getItem("syne_session");
+
+    if (!sessionId) {
+      sessionId = "sess_" + Math.random().toString(36).slice(2);
+      localStorage.setItem("syne_session", sessionId);
+    }
+
+    return sessionId;
+  }
+
   function getWalletBalance() {
     // TEMP: replace with real API or data source later
     const wallet = localStorage.getItem("syne_wallet");
@@ -33,13 +44,24 @@
   }
 
   // Global click interceptor
-  async function interceptClicks() {
-    document.addEventListener("click", async function (e) {
-      const target = e.target.closest(
-        'button[name="checkout"], a[href="/checkout"], .shopify-payment-button__button',
-      );
+  function isCheckoutTrigger(el) {
+    if (!el) return false;
 
-      if (!target) return;
+    const text = el.innerText?.toLowerCase() || "";
+
+    return (
+      el.name === "checkout" ||
+      el.getAttribute("href") === "/checkout" ||
+      text.includes("checkout") ||
+      el.classList.contains("shopify-payment-button__button")
+    );
+  }
+
+  function interceptClicks() {
+    document.addEventListener("click", async function (e) {
+      const target = e.target.closest("button, a");
+
+      if (!isCheckoutTrigger(target)) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -47,7 +69,7 @@
       try {
         await startCheckout();
       } catch (err) {
-        console.error(err);
+        console.error("Fallback to native checkout:", err);
         window.location.href = "/checkout";
       }
     });
@@ -107,112 +129,109 @@
     try {
       const res = await fetch(window.Shopify.routes.root + "cart.js", {
         method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
+        headers: { Accept: "application/json" },
         credentials: "same-origin",
       });
 
-      if (!res.ok) {
-        throw new Error("Cart fetch failed");
-      }
+      if (!res.ok) throw new Error("Cart fetch failed");
 
       const cart = await res.json();
 
-      console.log("Real cart:", cart);
-
       return {
-        items: cart.items.map((item) => ({
-          variant_id: item.variant_id,
-          name: item.product_title,
-          image: item.image,
-          quantity: item.quantity,
-          price: item.price / 100,
-        })),
-        total_price: cart.total_price / 100,
+        raw: cart,
+        parsed: {
+          items: cart.items.map((item) => ({
+            variant_id: item.variant_id,
+            name: item.product_title,
+            image: item.image,
+            quantity: item.quantity,
+            price: item.price / 100,
+          })),
+          total_price: cart.total_price / 100,
+        },
       };
     } catch (err) {
-      console.warn("Using mock cart (local/dev mode)");
+      console.warn("Cart fetch failed, using fallback");
 
-      // mock data
       return {
-        items: [
-          {
-            variant_id: 12345,
-            name: "Test Product",
-            image: "https://picsum.photos/200",
-            quantity: 2,
-            price: 500,
-          },
-        ],
-        total_price: 1000,
+        raw: null,
+        parsed: {
+          items: [],
+          total_price: 0,
+        },
       };
     }
   }
 
-  async function generateHash(message) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(message);
+  async function fetchWithTimeout(url, options, timeout = 7000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
 
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-
-    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    try {
+      return await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(id);
+    }
   }
 
   // sends cart data to backend server, it will return the Checkout URL
   async function createCheckoutSession(cart) {
     const payload = {
-      cart,
       user: {
         userId: getUserId(),
       },
-      shop: window.location.hostname,
-      context: "checkout",
       session: {
-        sessionId: localStorage.getItem("syne_session") || null,
+        sessionId: getSessionId(),
         timestamp: Date.now(),
       },
+      cart,
+      context: "checkout",
     };
 
-    const raw = JSON.stringify(payload);
-
-    // const signature = await generateHash(raw);
-
-    const res = await fetch(`/apps/synegrow/checkout/session`, {
+    const res = await fetchWithTimeout(`/apps/synegrow/checkout/session`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // "x-signature": signature,
       },
-      body: raw,
+      body: JSON.stringify(payload),
     });
 
-    const data = await res.json();
+    if (!res.ok) throw new Error("Session creation failed");
 
-    console.log(data);
-
-    return await data;
-
-    // console.log("Mock Checkout Session: ", cart);
-
-    // await new Promise((resolve) => setTimeout(resolve, 800));
-
-    // console.log({ domain });
-
-    // const res = await fetch(`${domain}/checkout.html`, {
-    //   method: "GET",
-    //   headers: {
-    //     Accept: "application/json",
-    //   },
-    //   credentials: "same-origin",
-    // });
-    // console.log(res);
-
-    // return {
-    //   checkoutUrl: "http://127.0.0.1:5500/checkout.html?session=mock123",
-    // };
+    return await res.json();
   }
+
+  function trackEvent(type, data = {}) {
+    try {
+      fetch(`/apps/synegrow/track`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: getUserId(),
+          type,
+          data,
+          timestamp: Date.now(),
+        }),
+      });
+    } catch (err) {
+      console.warn("Tracking failed");
+    }
+  }
+
+  // async function generateHash(message) {
+  //   const encoder = new TextEncoder();
+  //   const data = encoder.encode(message);
+
+  //   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  //   const hashArray = Array.from(new Uint8Array(hashBuffer));
+
+  //   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  // }
 
   // main checkout flow
   async function startCheckout() {
@@ -228,8 +247,17 @@
       // fetch cart data
       const cart = await getCart();
 
+      trackEvent("checkout_clicked", {
+        value: cart.parsed.total_price,
+      });
+
       // create checkout session from backend
       const session = await createCheckoutSession(cart);
+
+      if (session.useNativeCheckout) {
+        window.location.href = "/checkout";
+        return;
+      }
 
       const encodedCart = encodeURIComponent(JSON.stringify(cart));
 

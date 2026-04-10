@@ -19,15 +19,11 @@ app.use(cors());
 // Serve static files
 app.use(express.static("public"));
 
-// function verifySignature(body, signature) {
-//   const generated = crypto
-//     .createHash("sha256")
-//     .update(JSON.stringify(body))
-//     .digest("hex");
+// Global variables
+const EVENTS = [];
+const USERS = {};
 
-//   return generated === signature;
-// }
-
+// Verify Shopify proxy
 function verifyShopifyProxy(req) {
   const { signature, hmac, ...query } = req.query;
   const received = signature || hmac;
@@ -44,6 +40,32 @@ function verifyShopifyProxy(req) {
 
   return generated === received;
 }
+
+// Update user profile
+function updateUserProfile(event) {
+  const { userId, shop, type, timestamp } = event;
+
+  if (!USERS[userId]) {
+    USERS[userId] = {
+      userId,
+      shop,
+      visits: 0,
+      eventsCount: 0,
+      lastSeen: null,
+      createdAt: new Date(),
+    };
+  }
+
+  USERS[userId].eventsCount += 1;
+  USERS[userId].lastSeen = new Date(timestamp);
+
+  // Count visits (example logic)
+  if (type === "checkout_clicked") {
+    USERS[userId].visits += 1;
+  }
+}
+
+// Get shop details
 async function getShopDetails(shop, accessToken) {
   const query = `
     query {
@@ -91,6 +113,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// Checkout
 app.post("/checkout/session", async (req, res) => {
   try {
     if (!verifyShopifyProxy(req)) {
@@ -139,6 +162,53 @@ app.post("/checkout/session", async (req, res) => {
       error: "Internal Server Error",
     });
   }
+});
+
+// Track events
+app.post("/track", (req, res) => {
+  try {
+    // Verify Shopify proxy request
+    if (!verifyShopifyProxy(req)) {
+      return res.status(401).json({ error: "Invalid proxy request" });
+    }
+
+    const shop = req.query.shop;
+
+    const { userId, type, data, timestamp } = req.body;
+
+    if (!userId || !type) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    const event = {
+      shop,
+      userId,
+      type,
+      data: data || {},
+      timestamp: timestamp || Date.now(),
+    };
+
+    // Store event
+    EVENTS.push(event);
+
+    // Update user profile
+    updateUserProfile(event);
+
+    console.log("Tracked Event:", event);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Track error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get("/debug/events", (req, res) => {
+  res.json(EVENTS);
+});
+
+app.get("/debug/users", (req, res) => {
+  res.json(USERS);
 });
 
 app.listen(3000, () => {
