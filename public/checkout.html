@@ -101,6 +101,8 @@
       const params = new URLSearchParams(window.location.search);
       const cartData = JSON.parse(decodeURIComponent(params.get("cart")));
 
+      console.log({ cartData });
+
       const cartContainer = document.getElementById("cartItems");
 
       cartData.items.forEach((item) => {
