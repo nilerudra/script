@@ -98,28 +98,43 @@
     </div>
 
     <script>
-      const params = new URLSearchParams(window.location.search);
-      const cartData = JSON.parse(decodeURIComponent(params.get("cart")));
+      (function () {
+        const params = new URLSearchParams(window.location.search);
+        const cartParam = params.get("cart");
 
-      console.log({ cartData });
+        if (!cartParam) {
+          console.error("Cart missing");
+          return;
+        }
 
-      const cartContainer = document.getElementById("cartItems");
+        let cartData;
 
-      if (!cartData.items.length) {
-        cartContainer.innerHTML = "Your cart is empty";
-        return;
-      }
+        try {
+          cartData = JSON.parse(decodeURIComponent(cartParam));
+        } catch (err) {
+          console.error("Invalid cart data", err);
+          return;
+        }
 
-      cartContainer.innerHTML = "Loading...";
+        console.log({ cartData });
 
-      try {
-        cartData.items.forEach((item) => {
-          const price = item.price * item.quantity;
+        const cartContainer = document.getElementById("cartItems");
 
-          const div = document.createElement("div");
-          div.className = "item";
+        if (!cartData.items || !cartData.items.length) {
+          cartContainer.innerHTML = "Your cart is empty";
+          return;
+        }
 
-          div.innerHTML = `
+        cartContainer.innerHTML = "Loading...";
+
+        try {
+          cartData.items.forEach((item) => {
+            const price = item.price * item.quantity;
+
+            const div = document.createElement("div");
+            div.className = "item";
+
+            div.innerHTML = `
           <img src="${item.image}" alt="${item.name}" />
           
           <div class="item-details">
@@ -130,15 +145,16 @@
           <div class="item-price">$${price}</div>
         `;
 
-          cartContainer.appendChild(div);
-        });
+            cartContainer.appendChild(div);
+          });
 
-        // Use backend total instead of recalculating
-        document.getElementById("total").innerText =
-          "Total: $" + cartData.total_price;
-      } catch (err) {
-        cartContainer.innerHTML = "Something went wrong";
-      }
+          document.getElementById("total").innerText =
+            "Total: $" + cartData.total_price;
+        } catch (err) {
+          console.error(err);
+          cartContainer.innerHTML = "Something went wrong";
+        }
+      })();
     </script>
   </body>
 </html>
