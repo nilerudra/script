@@ -14,6 +14,19 @@
     initialScan();
   }
 
+  function getCookies() {
+    const cookies = {};
+
+    document.cookie.split("; ").forEach((cookie) => {
+      const [key, ...valParts] = cookie.split("=");
+      const value = valParts.join("=");
+
+      cookies[key] = decodeURIComponent(value);
+    });
+
+    return cookies;
+  }
+
   function getUserId() {
     let userId = localStorage.getItem("syne_user_id");
 
@@ -37,13 +50,12 @@
   }
 
   function getWalletBalance() {
-    // TEMP: replace with real API or data source later
     const wallet = localStorage.getItem("syne_wallet");
 
     return wallet ? Number(wallet) : 0;
   }
 
-  // Global click interceptor
+  // check if an element is a checkout trigger
   function isCheckoutTrigger(el) {
     if (!el) return false;
 
@@ -57,6 +69,7 @@
     );
   }
 
+  // Global click interceptor
   function interceptClicks() {
     document.addEventListener("click", async function (e) {
       const target = e.target.closest("button, a");
@@ -120,6 +133,7 @@
     });
   }
 
+  // scan initial DOM
   function initialScan() {
     attachListener(document);
   }
@@ -234,6 +248,10 @@
         return;
       }
 
+      const cookies = getCookies();
+
+      console.log("All cookies:", cookies);
+
       // fetch cart data
       const cart = await getCart();
 
@@ -280,7 +298,6 @@ function openCheckoutPopup(url) {
 
   const iframe = document.createElement("iframe");
   iframe.src = url;
-
   iframe.style.width = "420px";
   iframe.style.height = "90%";
   iframe.style.border = "none";
