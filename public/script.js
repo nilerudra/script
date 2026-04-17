@@ -287,6 +287,11 @@
         return;
       }
 
+      if (session.url.includes("payment")) {
+        openCheckoutPopup(`${session.url}`);
+        return;
+      }
+
       const encodedCart = encodeURIComponent(JSON.stringify(cart.parsed));
 
       const checkoutUrl = `${session.url}&cart=` + encodedCart;
