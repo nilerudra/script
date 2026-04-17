@@ -136,20 +136,24 @@
 
         // Step 1: Show auth UI
         proceedBtn.addEventListener("click", () => {
+          proceedBtn.style.display = "none";
           authBox.style.display = "block";
         });
 
         // Step 2: Send OTP
         sendOtpBtn.addEventListener("click", async () => {
-          const phone = phoneInput.value;
+          const phone = phoneInput.value.trim();
 
           if (!phone) {
             alert("Enter phone number");
             return;
           }
 
+          sendOtpBtn.disabled = true;
+          sendOtpBtn.innerText = "Sending...";
+
           try {
-            await fetch(`/apps/synegrow/otp/send`, {
+            const res = await fetch(`/apps/synegrow/otp/send`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -157,24 +161,45 @@
               body: JSON.stringify({ phone, sessionId }),
             });
 
+            if (!res.ok) {
+              throw new Error("Network error");
+            }
+
+            const data = await res.json();
+
+            // CHECK RESPONSE
+            if (!data.success) {
+              throw new Error(data.error || "OTP failed");
+            }
+
+            // Only show OTP if success
             otpInput.style.display = "block";
             verifyOtpBtn.style.display = "block";
 
-            alert("OTP sent");
+            console.log({ data });
+
+            alert("OTP sent successfully");
           } catch (err) {
-            alert("Failed to send OTP");
+            console.error(err);
+            alert(err.message || "Failed to send OTP");
+          } finally {
+            sendOtpBtn.disabled = false;
+            sendOtpBtn.innerText = "Send OTP";
           }
         });
 
         // Step 3: Verify OTP
         verifyOtpBtn.addEventListener("click", async () => {
-          const phone = phoneInput.value;
-          const otp = otpInput.value;
+          const phone = phoneInput.value.trim();
+          const otp = otpInput.value.trim();
 
           if (!otp) {
             alert("Enter OTP");
             return;
           }
+
+          verifyOtpBtn.disabled = true;
+          verifyOtpBtn.innerText = "Verifying...";
 
           try {
             const res = await fetch(`/apps/synegrow/otp/verify`, {
@@ -185,18 +210,29 @@
               body: JSON.stringify({ phone, otp, sessionId }),
             });
 
+            if (!res.ok) {
+              throw new Error("Network error");
+            }
+
             const data = await res.json();
 
-            if (data.success) {
-              alert("Verified ✅");
-
-              // 👉 Continue to Shopify checkout
-              window.location.href = "/checkout";
-            } else {
-              alert("Invalid OTP");
+            if (!data.success) {
+              throw new Error("Invalid OTP");
             }
+
+            alert("Verified");
+
+            // 🔥 OPTIONAL: store verified state
+            localStorage.setItem("syne_verified", "true");
+
+            // 👉 Redirect ONLY AFTER SUCCESS
+            window.location.href = "/checkout";
           } catch (err) {
-            alert("Verification failed");
+            console.error(err);
+            alert(err.message || "Verification failed");
+          } finally {
+            verifyOtpBtn.disabled = false;
+            verifyOtpBtn.innerText = "Verify OTP";
           }
         });
 
