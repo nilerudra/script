@@ -9,10 +9,9 @@
   init();
 
   function init() {
-    syncAuthFromURL();
     interceptClicks();
-    // observeDOM();
-    // initialScan();
+    observeDOM();
+    initialScan();
   }
 
   function getCookie(name) {
@@ -196,6 +195,9 @@
         sessionId: getSessionId(),
         timestamp: Date.now(),
       },
+      auth: {
+        token: getCookie("syne_auth"),
+      },
       cart,
       context: "checkout",
     };
@@ -234,40 +236,13 @@
     }
   }
 
-  // sync auth from URL
-  function syncAuthFromURL() {
-    const params = new URLSearchParams(window.location.search);
-
-    const auth = params.get("syne_auth");
-    const phone = params.get("phone");
-
-    if (auth === "true" && phone) {
-      const maxAge = 60 * 60 * 24 * 7;
-
-      document.cookie = `syne_auth=true; path=/; max-age=${maxAge}`;
-      document.cookie = `syne_phone=${encodeURIComponent(phone)}; path=/; max-age=${maxAge}`;
-
-      // clean URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }
-
   // main checkout flow
   async function startCheckout() {
     if (isProcessingCheckout) return; // 🔥 prevent duplicates
     isProcessingCheckout = true;
 
     try {
-      const isVerified = getCookie("syne_auth");
-      const phone = getCookie("syne_phone");
-
-      console.log({ isVerified });
-      console.log({ phone });
-
-      if (isVerified === "true" && phone) {
-        window.location.href = "/checkout";
-        return;
-      }
+      console.log(getCookie("syne_auth"));
 
       if (getWalletBalance() <= -5000) {
         window.location.href = "/checkout";
