@@ -146,6 +146,8 @@ app.post("/checkout/session", async (req, res) => {
     // 🔥 AUTH CHECK (SAFE)
     const authToken = req.cookies?.syne_auth;
 
+    console.log({ authToken });
+
     if (authToken) {
       try {
         const decoded = JSON.parse(
