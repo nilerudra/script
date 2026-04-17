@@ -237,6 +237,9 @@
       const isVerified = getCookie("syne_auth");
       const phone = getCookie("syne_phone");
 
+      console.log({ isVerified });
+      console.log({ phone });
+
       // Skip OTP for returning user
       if (isVerified === "true" && phone) {
         console.log("Returning user → skipping OTP");
