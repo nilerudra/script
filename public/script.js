@@ -3,7 +3,7 @@
 
   const script = document.currentScript;
   const domain = new URL(script.src).origin;
-
+  let isProcessingCheckout = false;
   console.log("domain: ", domain);
 
   init();
@@ -11,8 +11,8 @@
   function init() {
     syncAuthFromURL();
     interceptClicks();
-    observeDOM();
-    initialScan();
+    // observeDOM();
+    // initialScan();
   }
 
   function getCookie(name) {
@@ -172,7 +172,7 @@
     }
   }
 
-  async function fetchWithTimeout(url, options, timeout = 7000) {
+  async function fetchWithTimeout(url, options, timeout = 20000) {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
 
@@ -252,6 +252,9 @@
 
   // main checkout flow
   async function startCheckout() {
+    if (isProcessingCheckout) return; // 🔥 prevent duplicates
+    isProcessingCheckout = true;
+
     try {
       const isVerified = getCookie("syne_auth");
       const phone = getCookie("syne_phone");
@@ -259,27 +262,22 @@
       console.log({ isVerified });
       console.log({ phone });
 
-      // Skip OTP for returning user
       if (isVerified === "true" && phone) {
-        console.log("Returning user → skipping OTP");
         window.location.href = "/checkout";
         return;
       }
 
-      // Wallet fallback
       if (getWalletBalance() <= -5000) {
         window.location.href = "/checkout";
         return;
       }
 
-      // fetch cart data
       const cart = await getCart();
 
       trackEvent("checkout_clicked", {
         value: cart.parsed.total_price,
       });
 
-      // create checkout session from backend
       const session = await createCheckoutSession(cart);
 
       if (session.useNativeCheckout) {
@@ -293,12 +291,16 @@
       }
 
       const encodedCart = encodeURIComponent(JSON.stringify(cart.parsed));
-
       const checkoutUrl = `${session.url}&cart=` + encodedCart;
 
       openCheckoutPopup(checkoutUrl);
     } catch (err) {
-      console.error("Checkout error:", err); // handles error
+      console.error("Checkout error:", err);
+
+      // 🔥 fallback
+      window.location.href = "/checkout";
+    } finally {
+      isProcessingCheckout = false;
     }
   }
 })();
