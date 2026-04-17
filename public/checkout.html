@@ -223,17 +223,13 @@
             if (data.success) {
               alert("Verified");
 
-              // const maxAge = 60 * 60 * 24 * 7; // 7 days
-
-              // // Store auth flag
-              // document.cookie = `syne_auth=true; path=/; max-age=${maxAge}`;
-
-              // // Store phone (encoded)
-              // document.cookie = `syne_phone=${encodeURIComponent(
-              //   phone,
-              // )}; path=/; max-age=${maxAge}`;
-
-              window.location.href = `${data.url}?syne_auth=true&phone=${encodeURIComponent(phone)}`;
+              window.parent.postMessage(
+                {
+                  type: "SYNE_AUTH_SUCCESS",
+                  phone: phone,
+                },
+                "*",
+              );
             }
           } catch (err) {
             console.error(err);

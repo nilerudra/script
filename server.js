@@ -7,7 +7,6 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import axios from "axios";
-import cookieParser from "cookie-parser";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,8 +15,6 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
-
-app.use(cookieParser());
 
 // Serve static files
 app.use(express.static("public"));
@@ -143,29 +140,7 @@ app.post("/checkout/session", async (req, res) => {
     const protocol = req.headers["x-forwarded-proto"] || req.protocol;
     const baseUrl = `${protocol}://${req.get("host")}`;
 
-    // 🔥 AUTH CHECK (SAFE)
-    const authToken = req.cookies?.syne_auth;
-
-    console.log({ authToken });
-
-    if (authToken) {
-      try {
-        const decoded = JSON.parse(
-          Buffer.from(authToken, "base64").toString("utf-8"),
-        );
-
-        if (decoded?.verified && decoded?.phone) {
-          return res.json({
-            useNativeCheckout: false,
-            url: `${baseUrl}/payment.html`,
-          });
-        }
-      } catch (err) {
-        console.warn("Invalid auth token");
-      }
-    }
-
-    // 🔥 NORMAL FLOW (ALWAYS RETURN)
+    // NORMAL FLOW (ALWAYS RETURN)
     const shopDetails = await getShopDetails(shop, token);
     const sessionId = Date.now();
 
@@ -241,22 +216,6 @@ app.post("/otp/verify", (req, res) => {
 
   if (OTP_STORE[phone] == otp) {
     delete OTP_STORE[phone];
-
-    const token = Buffer.from(
-      JSON.stringify({
-        phone,
-        verified: true,
-        ts: Date.now(),
-      }),
-    ).toString("base64");
-
-    // 🔥 SET COOKIE (IMPORTANT)
-    res.cookie("syne_auth", token, {
-      httpOnly: true, // cannot be accessed by JS
-      secure: true, // HTTPS only
-      sameSite: "None", // REQUIRED for cross-origin
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
 
     const protocol = req.headers["x-forwarded-proto"] || req.protocol;
     const baseUrl = `${protocol}://${req.get("host")}`;

@@ -14,6 +14,29 @@
     initialScan();
   }
 
+  window.addEventListener("message", (event) => {
+    if (!event.data) return;
+
+    if (event.data.type === "SYNE_AUTH_SUCCESS") {
+      const { phone } = event.data;
+
+      const maxAge = 60 * 60 * 24 * 7;
+
+      // ✅ SET COOKIE ON SHOPIFY DOMAIN
+      document.cookie = `syne_auth=true; path=/; max-age=${maxAge}`;
+      document.cookie = `syne_phone=${encodeURIComponent(phone)}; path=/; max-age=${maxAge}`;
+
+      console.log("Auth stored in cookies");
+
+      // close popup
+      const overlay = document.getElementById("custom-checkout-overlay");
+      if (overlay) document.body.removeChild(overlay);
+
+      // continue checkout
+      window.location.href = "/checkout";
+    }
+  });
+
   function getCookie(name) {
     const match = document.cookie.match(
       new RegExp("(^| )" + name + "=([^;]+)"),
@@ -195,9 +218,6 @@
         sessionId: getSessionId(),
         timestamp: Date.now(),
       },
-      auth: {
-        token: getCookie("syne_auth"),
-      },
       cart,
       context: "checkout",
     };
@@ -238,12 +258,19 @@
 
   // main checkout flow
   async function startCheckout() {
+    const isVerified = getCookie("syne_auth");
+    const phone = getCookie("syne_phone");
+
+    if (isVerified === "true" && phone) {
+      console.log("Returning user → skip OTP");
+      openCheckoutPopup(`https://script-zfht.onrender.com/payment.html`);
+      return;
+    }
+
     if (isProcessingCheckout) return; // 🔥 prevent duplicates
     isProcessingCheckout = true;
 
     try {
-      console.log(getCookie("syne_auth"));
-
       if (getWalletBalance() <= -5000) {
         window.location.href = "/checkout";
         return;
