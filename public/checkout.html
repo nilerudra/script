@@ -220,13 +220,21 @@
               throw new Error("Invalid OTP");
             }
 
-            alert("Verified");
+            if (data.success) {
+              alert("Verified");
 
-            // 🔥 OPTIONAL: store verified state
-            localStorage.setItem("syne_verified", "true");
+              const maxAge = 60 * 60 * 24 * 7; // 7 days
 
-            // 👉 Redirect ONLY AFTER SUCCESS
-            window.location.href = "/checkout";
+              // Store auth flag
+              document.cookie = `syne_auth=true; path=/; max-age=${maxAge}`;
+
+              // Store phone (encoded)
+              document.cookie = `syne_phone=${encodeURIComponent(
+                phone,
+              )}; path=/; max-age=${maxAge}`;
+
+              window.location.href = data.url;
+            }
           } catch (err) {
             console.error(err);
             alert(err.message || "Verification failed");

@@ -226,6 +226,11 @@ app.post("/otp/verify", (req, res) => {
   if (OTP_STORE[phone] == otp) {
     delete OTP_STORE[phone];
 
+    res.json({
+      success: true,
+      url: `${baseUrl}/payment.html`,
+    });
+
     return res.json({ success: true });
   }
 

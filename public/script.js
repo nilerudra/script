@@ -14,17 +14,11 @@
     initialScan();
   }
 
-  function getCookies() {
-    const cookies = {};
-
-    document.cookie.split("; ").forEach((cookie) => {
-      const [key, ...valParts] = cookie.split("=");
-      const value = valParts.join("=");
-
-      cookies[key] = decodeURIComponent(value);
-    });
-
-    return cookies;
+  function getCookie(name) {
+    const match = document.cookie.match(
+      new RegExp("(^| )" + name + "=([^;]+)"),
+    );
+    return match ? decodeURIComponent(match[2]) : null;
   }
 
   function getUserId() {
@@ -240,17 +234,21 @@
   // main checkout flow
   async function startCheckout() {
     try {
-      const walletBalance = getWalletBalance();
+      const isVerified = getCookie("syne_auth");
+      const phone = getCookie("syne_phone");
 
-      if (walletBalance <= -5000) {
-        console.warn("Wallet too low → fallback to native checkout");
+      // Skip OTP for returning user
+      if (isVerified === "true" && phone) {
+        console.log("Returning user → skipping OTP");
         window.location.href = "/checkout";
         return;
       }
 
-      const cookies = getCookies();
-
-      console.log("All cookies:", cookies);
+      // Wallet fallback
+      if (getWalletBalance() <= -5000) {
+        window.location.href = "/checkout";
+        return;
+      }
 
       // fetch cart data
       const cart = await getCart();
