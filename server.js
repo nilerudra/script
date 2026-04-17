@@ -226,12 +226,13 @@ app.post("/otp/verify", (req, res) => {
   if (OTP_STORE[phone] == otp) {
     delete OTP_STORE[phone];
 
+    const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+    const baseUrl = `${protocol}://${req.get("host")}`;
+
     res.json({
       success: true,
       url: `${baseUrl}/payment.html`,
     });
-
-    return res.json({ success: true });
   }
 
   res.json({ success: false });
