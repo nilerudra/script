@@ -210,6 +210,8 @@
 
     if (!res.ok) throw new Error("Session creation failed");
 
+    console.log({ res });
+
     return await res.json();
   }
 
