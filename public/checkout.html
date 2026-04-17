@@ -223,17 +223,17 @@
             if (data.success) {
               alert("Verified");
 
-              const maxAge = 60 * 60 * 24 * 7; // 7 days
+              // const maxAge = 60 * 60 * 24 * 7; // 7 days
 
-              // Store auth flag
-              document.cookie = `syne_auth=true; path=/; max-age=${maxAge}`;
+              // // Store auth flag
+              // document.cookie = `syne_auth=true; path=/; max-age=${maxAge}`;
 
-              // Store phone (encoded)
-              document.cookie = `syne_phone=${encodeURIComponent(
-                phone,
-              )}; path=/; max-age=${maxAge}`;
+              // // Store phone (encoded)
+              // document.cookie = `syne_phone=${encodeURIComponent(
+              //   phone,
+              // )}; path=/; max-age=${maxAge}`;
 
-              window.location.href = data.url;
+              window.location.href = `${data.url}?syne_auth=true&phone=${encodeURIComponent(phone)}`;
             }
           } catch (err) {
             console.error(err);
@@ -281,7 +281,7 @@
 
             div.innerHTML = `
           <img src="${item.image}" alt="${item.name}" />
-          
+
           <div class="item-details">
             <div class="item-name">${item.name}</div>
             <div class="item-meta">Qty: ${item.quantity}</div>

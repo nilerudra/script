@@ -9,6 +9,7 @@
   init();
 
   function init() {
+    syncAuthFromURL();
     interceptClicks();
     observeDOM();
     initialScan();
@@ -228,6 +229,24 @@
       });
     } catch (err) {
       console.warn("Tracking failed");
+    }
+  }
+
+  // sync auth from URL
+  function syncAuthFromURL() {
+    const params = new URLSearchParams(window.location.search);
+
+    const auth = params.get("syne_auth");
+    const phone = params.get("phone");
+
+    if (auth === "true" && phone) {
+      const maxAge = 60 * 60 * 24 * 7;
+
+      document.cookie = `syne_auth=true; path=/; max-age=${maxAge}`;
+      document.cookie = `syne_phone=${encodeURIComponent(phone)}; path=/; max-age=${maxAge}`;
+
+      // clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }
 
