@@ -22,6 +22,7 @@ app.use(express.static("public"));
 // Global variables
 const EVENTS = [];
 const USERS = {};
+const OTP_STORE = {};
 
 // Verify Shopify proxy
 function verifyShopifyProxy(req) {
@@ -201,6 +202,34 @@ app.post("/track", (req, res) => {
     console.error("Track error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
+});
+
+app.post("/otp/send", (req, res) => {
+  const { phone } = req.body;
+
+  if (!phone) {
+    return res.status(400).json({ error: "Phone required" });
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000);
+
+  OTP_STORE[phone] = otp;
+
+  console.log("OTP:", otp); // replace with SMS later
+
+  res.json({ success: true });
+});
+
+app.post("/otp/verify", (req, res) => {
+  const { phone, otp } = req.body;
+
+  if (OTP_STORE[phone] == otp) {
+    delete OTP_STORE[phone];
+
+    return res.json({ success: true });
+  }
+
+  res.json({ success: false });
 });
 
 app.get("/debug/events", (req, res) => {

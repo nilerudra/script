@@ -93,12 +93,113 @@
 
       <div class="card">
         <div class="total" id="total"></div>
-        <button class="btn">Proceed to Payment</button>
+        <button class="btn" id="proceedBtn">Proceed to Payment</button>
+      </div>
+
+      <div id="authBox" style="margin-top: 10px; display: none">
+        <input
+          type="text"
+          id="phoneInput"
+          placeholder="Enter mobile number"
+          style="width: 100%; padding: 10px; margin-bottom: 10px"
+        />
+
+        <button class="btn" id="sendOtpBtn">Send OTP</button>
+
+        <input
+          type="text"
+          id="otpInput"
+          placeholder="Enter OTP"
+          style="width: 100%; padding: 10px; margin-top: 10px; display: none"
+        />
+
+        <button class="btn" id="verifyOtpBtn" style="display: none">
+          Verify OTP
+        </button>
       </div>
     </div>
 
     <script>
       (function () {
+        const proceedBtn = document.getElementById("proceedBtn");
+        const authBox = document.getElementById("authBox");
+
+        const phoneInput = document.getElementById("phoneInput");
+        const otpInput = document.getElementById("otpInput");
+
+        const sendOtpBtn = document.getElementById("sendOtpBtn");
+        const verifyOtpBtn = document.getElementById("verifyOtpBtn");
+
+        const sessionId = new URLSearchParams(window.location.search).get(
+          "session",
+        );
+
+        // Step 1: Show auth UI
+        proceedBtn.addEventListener("click", () => {
+          authBox.style.display = "block";
+        });
+
+        // Step 2: Send OTP
+        sendOtpBtn.addEventListener("click", async () => {
+          const phone = phoneInput.value;
+
+          if (!phone) {
+            alert("Enter phone number");
+            return;
+          }
+
+          try {
+            await fetch(`/apps/synegrow/otp/send`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ phone, sessionId }),
+            });
+
+            otpInput.style.display = "block";
+            verifyOtpBtn.style.display = "block";
+
+            alert("OTP sent");
+          } catch (err) {
+            alert("Failed to send OTP");
+          }
+        });
+
+        // Step 3: Verify OTP
+        verifyOtpBtn.addEventListener("click", async () => {
+          const phone = phoneInput.value;
+          const otp = otpInput.value;
+
+          if (!otp) {
+            alert("Enter OTP");
+            return;
+          }
+
+          try {
+            const res = await fetch(`/apps/synegrow/otp/verify`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ phone, otp, sessionId }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+              alert("Verified ✅");
+
+              // 👉 Continue to Shopify checkout
+              window.location.href = "/checkout";
+            } else {
+              alert("Invalid OTP");
+            }
+          } catch (err) {
+            alert("Verification failed");
+          }
+        });
+
         const params = new URLSearchParams(window.location.search);
         const cartParam = params.get("cart");
 
