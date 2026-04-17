@@ -128,7 +128,6 @@ app.post("/checkout/session", async (req, res) => {
     const { cart } = req.body;
     const token = process.env.ACCESS_TOKEN;
 
-    // Validations
     if (!cart) {
       return res.status(400).json({ error: "Cart missing" });
     }
@@ -141,44 +140,42 @@ app.post("/checkout/session", async (req, res) => {
       return res.status(500).json({ error: "ACCESS_TOKEN missing" });
     }
 
-    const authToken = req.cookies.syne_auth;
-    // Fix for Render proxy (important)
     const protocol = req.headers["x-forwarded-proto"] || req.protocol;
     const baseUrl = `${protocol}://${req.get("host")}`;
+
+    // 🔥 AUTH CHECK (SAFE)
+    const authToken = req.cookies?.syne_auth;
 
     if (authToken) {
       try {
         const decoded = JSON.parse(
-          Buffer.from(token, "base64").toString("utf-8"),
+          Buffer.from(authToken, "base64").toString("utf-8"),
         );
 
-        if (decoded.verified && decoded.phone) {
+        if (decoded?.verified && decoded?.phone) {
           return res.json({
             useNativeCheckout: false,
             url: `${baseUrl}/payment.html`,
           });
         }
-
-        // Fetches Shopify store details
-        const shopDetails = await getShopDetails(shop, token);
-
-        const sessionId = Date.now();
-
-        res.json({
-          shopDetails: shopDetails,
-          url: `${baseUrl}/checkout.html?session=${sessionId}`,
-        });
       } catch (err) {
-        console.error("ERROR:", err.response?.data || err.message || err);
-
-        res.status(500).json({
-          error: "Internal Server Error",
-        });
+        console.warn("Invalid auth token");
       }
     }
+
+    // 🔥 NORMAL FLOW (ALWAYS RETURN)
+    const shopDetails = await getShopDetails(shop, token);
+    const sessionId = Date.now();
+
+    return res.json({
+      shopDetails,
+      url: `${baseUrl}/checkout.html?session=${sessionId}`,
+    });
   } catch (err) {
     console.error("Checkout error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({
+      error: "Internal server error",
+    });
   }
 });
 
