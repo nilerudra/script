@@ -260,11 +260,14 @@
       const isVerified = getCookie("syne_auth");
       const phone = getCookie("syne_phone");
 
-      // 🔐 Step 1: Require auth first
+      console.log(isVerified);
+      console.log(phone);
+
+      // Step 1: Require auth first
       if (!isAfterAuth && (isVerified !== "true" || !phone)) {
         console.log("User not verified → open auth");
 
-        openCheckoutPopup("https://script-zfht.onrender.com/payment.html");
+        openCheckoutPopup("https://script-zfht.onrender.com/checkout.html");
         return;
       }
 
@@ -281,13 +284,13 @@
 
       console.log("SESSION:", session);
 
-      // 🚨 Backend fallback
+      // Backend fallback
       if (session.useNativeCheckout) {
         window.location.href = "/checkout";
         return;
       }
 
-      // ✅ Always open payment page
+      // Always open payment page
       if (session.url) {
         openCheckoutPopup(session.url);
         return;
