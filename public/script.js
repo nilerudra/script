@@ -26,7 +26,7 @@
       document.cookie = `syne_auth=true; path=/; max-age=${maxAge}`;
       document.cookie = `syne_phone=${encodeURIComponent(phone)}; path=/; max-age=${maxAge}`;
 
-      console.log(document.getCookie());
+      console.log(document.cookie);
 
       console.log("Auth stored in cookies");
 
