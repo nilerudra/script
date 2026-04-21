@@ -28,7 +28,7 @@
 
       console.log("Auth stored in cookies");
 
-      startCheckout(true);
+      startCheckout();
     }
   });
 
@@ -252,7 +252,7 @@
   }
 
   // main checkout flow
-  async function startCheckout(isAfterAuth = false) {
+  async function startCheckout() {
     if (isProcessingCheckout) return;
     isProcessingCheckout = true;
 
@@ -264,7 +264,7 @@
       console.log(phone);
 
       // Step 1: Verify user
-      if (isAfterAuth && isVerified === "true") {
+      if (isVerified === "true" && phone) {
         console.log("User verified → proceeding to payment");
 
         openCheckoutPopup("https://script-zfht.onrender.com/payment.html");
