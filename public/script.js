@@ -264,6 +264,7 @@
 
   // main checkout flow
   async function startCheckout() {
+    console.log(document.cookie);
     if (isProcessingCheckout) return;
     isProcessingCheckout = true;
 
