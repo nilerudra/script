@@ -26,6 +26,8 @@
       document.cookie = `syne_auth=true; path=/; max-age=${maxAge}`;
       document.cookie = `syne_phone=${encodeURIComponent(phone)}; path=/; max-age=${maxAge}`;
 
+      console.log(document.getCookie());
+
       console.log("Auth stored in cookies");
 
       const overlay = document.getElementById("custom-checkout-overlay");
@@ -33,7 +35,7 @@
         document.body.removeChild(overlay);
       }
 
-      // 🔥 DIRECTLY OPEN PAYMENT (no restart flow)
+      // DIRECTLY OPEN PAYMENT
       if (url) {
         openCheckoutPopup(url);
       }
@@ -240,6 +242,7 @@
     return await res.json();
   }
 
+  // track events
   function trackEvent(type, data = {}) {
     try {
       fetch(`/apps/synegrow/track`, {
@@ -275,7 +278,7 @@
       if (isVerified === "true" && phone) {
         console.log("User verified → proceeding to payment");
 
-        openCheckoutPopup("https://script-zfht.onrender.com/payment.html");
+        openCheckoutPopup(`${domain}/payment.html`);
         return;
       }
 
