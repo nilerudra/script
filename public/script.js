@@ -28,9 +28,7 @@
 
       console.log("Auth stored in cookies");
 
-      window.__SYNE_CHECKOUT_HANDLED__ = true;
-
-      openCheckoutPopup("https://script-zfht.onrender.com/payment.html");
+      startCheckout(true);
     }
   });
 
@@ -254,22 +252,24 @@
   }
 
   // main checkout flow
-  async function startCheckout() {
-    if (window.__SYNE_CHECKOUT_HANDLED__) return;
-
-    const isVerified = getCookie("syne_auth");
-    const phone = getCookie("syne_phone");
-
-    if (isVerified === "true" && phone) {
-      console.log("Returning user → skip OTP");
-      openCheckoutPopup(`https://script-zfht.onrender.com/payment.html`);
-      return;
-    }
-
-    if (isProcessingCheckout) return; // 🔥 prevent duplicates
+  async function startCheckout(isAfterAuth = false) {
+    if (isProcessingCheckout) return;
     isProcessingCheckout = true;
 
     try {
+      const isVerified = getCookie("syne_auth");
+      const phone = getCookie("syne_phone");
+
+      // 🔐 Step 1: Require auth first
+      if (!isAfterAuth && (isVerified !== "true" || !phone)) {
+        console.log("User not verified → open auth");
+
+        openCheckoutPopup("https://script-zfht.onrender.com/payment.html");
+        return;
+      }
+
+      console.log("User verified → proceeding to payment");
+
       if (getWalletBalance() <= -5000) {
         window.location.href = "/checkout";
         return;
@@ -277,31 +277,25 @@
 
       const cart = await getCart();
 
-      trackEvent("checkout_clicked", {
-        value: cart.parsed.total_price,
-      });
-
       const session = await createCheckoutSession(cart);
 
+      console.log("SESSION:", session);
+
+      // 🚨 Backend fallback
       if (session.useNativeCheckout) {
         window.location.href = "/checkout";
         return;
       }
 
-      if (session.url.includes("payment")) {
-        openCheckoutPopup(`${session.url}`);
+      // ✅ Always open payment page
+      if (session.url) {
+        openCheckoutPopup(session.url);
         return;
       }
 
-      const encodedCart = encodeURIComponent(JSON.stringify(cart.parsed));
-      const checkoutUrl = `${session.url}&cart=` + encodedCart;
-
-      openCheckoutPopup(checkoutUrl);
+      throw new Error("Invalid session response");
     } catch (err) {
       console.error("Checkout error:", err);
-
-      // fallback
-      window.location.href = "/checkout";
     } finally {
       isProcessingCheckout = false;
     }
