@@ -22,18 +22,15 @@
 
       const maxAge = 60 * 60 * 24 * 7;
 
-      // ✅ SET COOKIE ON SHOPIFY DOMAIN
+      // SET COOKIE ON SHOPIFY DOMAIN
       document.cookie = `syne_auth=true; path=/; max-age=${maxAge}`;
       document.cookie = `syne_phone=${encodeURIComponent(phone)}; path=/; max-age=${maxAge}`;
 
       console.log("Auth stored in cookies");
 
-      // close popup
-      const overlay = document.getElementById("custom-checkout-overlay");
-      if (overlay) document.body.removeChild(overlay);
+      window.__SYNE_CHECKOUT_HANDLED__ = true;
 
-      // continue checkout
-      window.location.href = "/checkout";
+      openCheckoutPopup("https://script-zfht.onrender.com/payment.html");
     }
   });
 
@@ -258,6 +255,8 @@
 
   // main checkout flow
   async function startCheckout() {
+    if (window.__SYNE_CHECKOUT_HANDLED__) return;
+
     const isVerified = getCookie("syne_auth");
     const phone = getCookie("syne_phone");
 
@@ -301,7 +300,7 @@
     } catch (err) {
       console.error("Checkout error:", err);
 
-      // 🔥 fallback
+      // fallback
       window.location.href = "/checkout";
     } finally {
       isProcessingCheckout = false;
