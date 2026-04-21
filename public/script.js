@@ -18,7 +18,7 @@
     if (!event.data) return;
 
     if (event.data.type === "SYNE_AUTH_SUCCESS") {
-      const { phone } = event.data;
+      const { phone, url } = event.data;
 
       const maxAge = 60 * 60 * 24 * 7;
 
@@ -28,7 +28,15 @@
 
       console.log("Auth stored in cookies");
 
-      startCheckout();
+      const overlay = document.getElementById("custom-checkout-overlay");
+      if (overlay) {
+        document.body.removeChild(overlay);
+      }
+
+      // 🔥 DIRECTLY OPEN PAYMENT (no restart flow)
+      if (url) {
+        openCheckoutPopup(url);
+      }
     }
   });
 
