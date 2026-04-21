@@ -264,10 +264,10 @@
       console.log(phone);
 
       // Step 1: Require auth first
-      if (!isAfterAuth && (isVerified !== "true" || !phone)) {
+      if (isAfterAuth && isVerified === "true") {
         console.log("User not verified → open auth");
 
-        openCheckoutPopup("https://script-zfht.onrender.com/checkout.html");
+        openCheckoutPopup("https://script-zfht.onrender.com/payment.html");
         return;
       }
 
