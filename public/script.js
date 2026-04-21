@@ -263,23 +263,25 @@
       console.log(isVerified);
       console.log(phone);
 
-      // Step 1: Require auth first
+      // Step 1: Verify user
       if (isAfterAuth && isVerified === "true") {
-        console.log("User not verified → open auth");
+        console.log("User verified → proceeding to payment");
 
         openCheckoutPopup("https://script-zfht.onrender.com/payment.html");
         return;
       }
 
-      console.log("User verified → proceeding to payment");
+      console.log("User not verified → open auth");
 
+      // Step 2: check wallet balance
       if (getWalletBalance() <= -5000) {
         window.location.href = "/checkout";
         return;
       }
-
+      // Step 3: Get cart
       const cart = await getCart();
 
+      // Step 4: Create checkout session
       const session = await createCheckoutSession(cart);
 
       console.log("SESSION:", session);
@@ -290,9 +292,11 @@
         return;
       }
 
-      // Always open payment page
+      // Always open checkout page
       if (session.url) {
-        openCheckoutPopup(session.url);
+        const encodedCart = encodeURIComponent(JSON.stringify(cart.parsed));
+        const checkoutUrl = `${session.url}&cart=` + encodedCart;
+        openCheckoutPopup(checkoutUrl);
         return;
       }
 
