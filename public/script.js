@@ -290,7 +290,7 @@
         window.location.href = "/checkout";
         return;
       }
-      
+
       // Step 3: Get cart
       const cart = await getCart();
 
@@ -363,6 +363,3 @@ function openCheckoutPopup(url) {
 // https://streetmuse.in/cart/add.js
 // https://fastrr-boost-ui.pickrr.com/static/js/main.2ccc86482eddeeb85030.js
 // https://fastrr-boost-ui.pickrr.com/static/js/342.591e518c.chunk.js
-
-
-const base_url=/v1/api/
