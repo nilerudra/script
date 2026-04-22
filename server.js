@@ -214,6 +214,8 @@ app.post("/otp/send", (req, res) => {
 app.post("/otp/verify", (req, res) => {
   const { phone, otp } = req.body;
 
+  const token = crypto.randomBytes(32).toString("hex");
+
   if (OTP_STORE[phone] == otp) {
     delete OTP_STORE[phone];
 
@@ -222,6 +224,7 @@ app.post("/otp/verify", (req, res) => {
 
     return res.json({
       success: true,
+      token,
       url: `${baseUrl}/payment.html`,
     });
   }
