@@ -270,13 +270,13 @@
 
     try {
       const isVerified = getCookie("syne_auth");
-      const phone = getCookie("syne_phone");
+      const token = getCookie("syne_token");
 
       console.log(isVerified);
-      console.log(phone);
+      console.log(token);
 
       // Step 1: Verify user
-      if (isVerified === "true" && phone) {
+      if (isVerified === "true" && token) {
         console.log("User verified → proceeding to payment");
 
         openCheckoutPopup(`${domain}/payment.html`);
@@ -290,6 +290,7 @@
         window.location.href = "/checkout";
         return;
       }
+      
       // Step 3: Get cart
       const cart = await getCart();
 
