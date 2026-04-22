@@ -18,7 +18,7 @@
     if (!event.data) return;
 
     if (event.data.type === "SYNE_AUTH_SUCCESS") {
-      const { phone, url } = event.data;
+      const { token, url } = event.data;
 
       const maxAge = 60 * 60 * 24 * 7;
 

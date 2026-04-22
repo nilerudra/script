@@ -23,6 +23,7 @@ app.use(express.static("public"));
 const EVENTS = [];
 const USERS = {};
 const OTP_STORE = {};
+const SESSIONS = {};
 
 // Verify Shopify proxy
 function verifyShopifyProxy(req) {
@@ -215,6 +216,11 @@ app.post("/otp/verify", (req, res) => {
   const { phone, otp } = req.body;
 
   const token = crypto.randomBytes(32).toString("hex");
+
+  SESSIONS[token] = {
+    phone,
+    createdAt: Date.now(),
+  };
 
   if (OTP_STORE[phone] == otp) {
     delete OTP_STORE[phone];
